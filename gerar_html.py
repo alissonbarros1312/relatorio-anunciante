@@ -134,7 +134,7 @@ def atualizar_github():
     rodar("git add .")
     mensagem = f'Atualização automática {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}'
     rodar(f'git commit -m "{mensagem}"')
-    rodar("git push origin main")  # se for master, troque para master
+    rodar("git push origin master")  # se for master, troque para master
 
 
 # ==============================

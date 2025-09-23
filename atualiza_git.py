@@ -10,7 +10,7 @@ def rodar_comando(comando):
         print(f"❌ Erro no comando: {comando}")
         print(resultado.stderr)
 
-if __name__ == "__master__":
+if __name__ == "__main__":
     # 1. Rodar o script de gerar HTML
     print("🔄 Gerando relatório HTML...")
     rodar_comando("python gerar_html.py")
