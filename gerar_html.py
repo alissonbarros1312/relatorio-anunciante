@@ -1,34 +1,36 @@
-import gspread 
+import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import subprocess
 from datetime import datetime
+import os
 
-# Caminho do arquivo de credenciais
-CREDENTIALS_FILE = "credentials.json"
-HTML_OUTPUT = "index.html"  # 👉 tem que ser index.html para o GitHub Pages abrir direto
-
-# IDs das planilhas
+# -------------------------------
+# CONFIGURAÇÃO
+# -------------------------------
+CREDENTIALS_FILE = "credentials.json"  # ⚠️ NÃO versionar este arquivo
+HTML_OUTPUT = "index.html"              # Para GitHub Pages abrir diretamente
 SHEET_ID_VISITANTES = "10WR4hOcQMlfMUHPg2t5TSigzfoS_VgO6y_1d_BecUlk"
 SHEET_ID_IGREJAS = "1VmcqvfnZacUGT4zEcPYIhrFmVvRDoilHEKJ_lkQddHE"
 
-# ==============================
-# FUNÇÃO PARA GERAR O HTML
-# ==============================
+# -------------------------------
+# FUNÇÃO: GERAR HTML
+# -------------------------------
 def gerar_html():
+    # Autenticação Google
     scope = ["https://spreadsheets.google.com/feeds",
              "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
     client = gspread.authorize(creds)
 
-    # Abre a planilha Visitantes
+    # Dados Visitantes
     sheet_visitantes = client.open_by_key(SHEET_ID_VISITANTES).sheet1
     visitantes_data = sheet_visitantes.get_all_records()
 
-    # Abre a planilha Igrejas
+    # Dados Igrejas
     sheet_igrejas = client.open_by_key(SHEET_ID_IGREJAS).sheet1
     igrejas_data = sheet_igrejas.get_all_records()
 
-    # ---- Construindo HTML ----
+    # Construindo HTML
     html = """
     <!DOCTYPE html>
     <html lang="pt-br">
@@ -44,10 +46,7 @@ def gerar_html():
             th { background: #444; color: #fff; }
             tr:nth-child(even) { background: #f2f2f2; }
             tr:hover { background: #e9f5ff; }
-            @media (max-width: 768px) {
-                body { font-size: 14px; margin: 10px; }
-                th, td { padding: 8px; }
-            }
+            @media (max-width: 768px) { body { font-size: 14px; margin: 10px; } th, td { padding: 8px; } }
         </style>
     </head>
     <body>
@@ -63,9 +62,7 @@ def gerar_html():
     """
 
     for v in visitantes_data:
-        acompanhantes = ", ".join(
-            [v.get(f"Acompanhante {i}", "") for i in range(1, 5)]
-        ).strip(", ")
+        acompanhantes = ", ".join([v.get(f"Acompanhante {i}", "") for i in range(1, 5)]).strip(", ")
         html += f"""
                 <tr>
                     <td>{v.get('Qual igreja?', '')}</td>
@@ -113,15 +110,15 @@ def gerar_html():
     </html>
     """
 
+    # Salva HTML localmente
     with open(HTML_OUTPUT, "w", encoding="utf-8") as f:
         f.write(html)
 
     print(f"✅ Relatório gerado com sucesso: {HTML_OUTPUT}")
 
-
-# ==============================
-# FUNÇÃO PARA ATUALIZAR O GITHUB
-# ==============================
+# -------------------------------
+# FUNÇÃO: ATUALIZAR GITHUB
+# -------------------------------
 def atualizar_github():
     def rodar(comando):
         resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
@@ -131,15 +128,15 @@ def atualizar_github():
             print(f"❌ Erro: {comando}")
             print(resultado.stderr)
 
-    rodar("git add .")
+    # Apenas adiciona e comita arquivos relevantes (ignora credentials.json)
+    rodar("git add index.html gerar_html.py atualiza_git.py .gitignore")
     mensagem = f'Atualização automática {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}'
     rodar(f'git commit -m "{mensagem}"')
-    rodar("git push origin master")  # se for master, troque para master
+    rodar("git push origin master")  # branch correto
 
-
-# ==============================
+# -------------------------------
 # EXECUÇÃO PRINCIPAL
-# ==============================
+# -------------------------------
 if __name__ == "__main__":
     gerar_html()
     atualizar_github()
